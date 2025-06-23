@@ -531,6 +531,7 @@ getgenv().loaded = true
             local cfg = {
                 name = properties.name or properties.Name or "fijihack.panda",
                 size = properties.size or properties.Size or dim2(0, 460, 0, 362), 
+                bind = properties.bind or properties.Bind or nil,
                 selected_tab 
             }
 
@@ -610,6 +611,92 @@ getgenv().loaded = true
                     VerticalFlex = Enum.UIFlexAlignment.Fill
                 });
             --
+
+            -- Window toggle keybind functionality
+            if cfg.bind then
+                local toggleKey
+                
+                -- Convert string to KeyCode enum
+                if type(cfg.bind) == "string" then
+                    -- Handle common key name mappings
+                    local keyMappings = {
+                        ["insert"] = Enum.KeyCode.Insert,
+                        ["delete"] = Enum.KeyCode.Delete,
+                        ["home"] = Enum.KeyCode.Home,
+                        ["end"] = Enum.KeyCode.End,
+                        ["pageup"] = Enum.KeyCode.PageUp,
+                        ["pagedown"] = Enum.KeyCode.PageDown,
+                        ["rshift"] = Enum.KeyCode.RightShift,
+                        ["lshift"] = Enum.KeyCode.LeftShift,
+                        ["rctrl"] = Enum.KeyCode.RightControl,
+                        ["lctrl"] = Enum.KeyCode.LeftControl,
+                        ["ralt"] = Enum.KeyCode.RightAlt,
+                        ["lalt"] = Enum.KeyCode.LeftAlt,
+                        ["f1"] = Enum.KeyCode.F1,
+                        ["f2"] = Enum.KeyCode.F2,
+                        ["f3"] = Enum.KeyCode.F3,
+                        ["f4"] = Enum.KeyCode.F4,
+                        ["f5"] = Enum.KeyCode.F5,
+                        ["f6"] = Enum.KeyCode.F6,
+                        ["f7"] = Enum.KeyCode.F7,
+                        ["f8"] = Enum.KeyCode.F8,
+                        ["f9"] = Enum.KeyCode.F9,
+                        ["f10"] = Enum.KeyCode.F10,
+                        ["f11"] = Enum.KeyCode.F11,
+                        ["f12"] = Enum.KeyCode.F12,
+                    }
+                    
+                    local bindLower = cfg.bind:lower()
+                    toggleKey = keyMappings[bindLower]
+                    
+                    -- If not in mappings, try to get it directly from Enum.KeyCode
+                    if not toggleKey then
+                        local success, result = pcall(function()
+                            return Enum.KeyCode[cfg.bind]
+                        end)
+                        if success then
+                            toggleKey = result
+                        end
+                    end
+                elseif typeof(cfg.bind) == "EnumItem" then
+                    toggleKey = cfg.bind
+                end
+                
+                -- Add window toggle functionality if we have a valid key
+                if toggleKey then
+                    local windowVisible = true
+                    
+                    library:connection(uis.InputBegan, function(input, gameProcessed)
+                        if gameProcessed then return end
+                        
+                        if input.KeyCode == toggleKey then
+                            windowVisible = not windowVisible
+                            library.gui.Enabled = windowVisible
+                            
+                            -- Optional: Show notification about toggle state
+                            if notifications and notifications.create_notification and windowVisible then
+                                pcall(function()
+                                    notifications:create_notification({
+                                        name = "UI: " .. (windowVisible and "Shown" or "Hidden")
+                                    })
+                                end)
+                            end
+                        end
+                    end)
+                    
+                    -- Store the toggle function for external access
+                    cfg.toggle = function()
+                        windowVisible = not windowVisible
+                        library.gui.Enabled = windowVisible
+                        return windowVisible
+                    end
+                    
+                    cfg.set_visible = function(visible)
+                        windowVisible = visible
+                        library.gui.Enabled = windowVisible
+                    end
+                end
+            end
 
             return setmetatable(cfg, library)
         end 
