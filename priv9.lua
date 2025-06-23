@@ -976,7 +976,7 @@ getgenv().loaded = true
         function library:watermark_changer(options)
             local cfg = {
                 name = options.name or "watermark text",
-                default = options.default or "priv9 - custom text",
+                default = options.default or "somber.lol - %fps% fps - %ping% ping - uid 0",
                 callback = options.callback or function() end,
                 watermark_ref = options.watermark or getgenv().library_watermark,
                 flag = options.flag or "watermark_text",
@@ -1020,7 +1020,7 @@ getgenv().loaded = true
                     Position = dim2(0, 6, 0, 0),
                     BorderSizePixel = 0,
                     PlaceholderColor3 = rgb(170, 170, 170),
-                    PlaceholderText = "Enter watermark text...",
+                    PlaceholderText = "Use %fps% and %ping% for dynamic values",
                     Text = cfg.default,
                 })
                 
@@ -1043,8 +1043,8 @@ getgenv().loaded = true
             
             -- Functions
                 function cfg.set(text) 
-                    if cfg.watermark_ref and cfg.watermark_ref.set_text then
-                        cfg.watermark_ref.set_text(text)
+                    if cfg.watermark_ref and cfg.watermark_ref.set_custom_text then
+                        cfg.watermark_ref.set_custom_text(text)
                     end
                     
                     input.Text = text
@@ -1068,8 +1068,8 @@ getgenv().loaded = true
                 
                 input:GetPropertyChangedSignal("Text"):Connect(function()
                     -- Update watermark in real-time as user types
-                    if cfg.watermark_ref and cfg.watermark_ref.set_text then
-                        cfg.watermark_ref.set_text(input.Text)
+                    if cfg.watermark_ref and cfg.watermark_ref.set_custom_text then
+                        cfg.watermark_ref.set_custom_text(input.Text)
                     end
                 end)
             -- 
@@ -1077,30 +1077,41 @@ getgenv().loaded = true
             return setmetatable(cfg, library)
         end 
 
-        local watermark = library:watermark({name = "priv9 - 100 fps - 100 ping"})
+        local watermark = library:watermark({name = "somber.lol - fps 0 - ping 0ms - uid 0"})
         getgenv().library_watermark = watermark  -- Make watermark globally accessible
         local fps = 0
         local watermark_delay = tick() 
-        local custom_watermark_set = false  -- Track if user set custom text
+        local custom_watermark_text = nil  -- Store custom watermark template
+        local use_auto_watermark = true  -- Default to auto mode
 
-        -- Enhanced watermark with custom text override
-        function watermark.set_text_custom(text, disable_auto_update)
-            watermark.set_text(text)
-            if disable_auto_update ~= false then
-                custom_watermark_set = true  -- Disable auto FPS/ping updates
-            end
+        -- Enhanced watermark with placeholder support
+        function watermark.set_custom_text(text)
+            custom_watermark_text = text
+            use_auto_watermark = false
         end
         
-        -- Override the original set_text to maintain custom state
+        -- Function to process placeholders in custom text
+        local function process_watermark_placeholders(text, current_fps, current_ping)
+            if not text then return "somber.lol - fps 0 - ping 0ms - uid 0" end
+            
+            local processed = text
+            processed = string.gsub(processed, "%%fps%%", tostring(current_fps))
+            processed = string.gsub(processed, "%%ping%%", current_ping)
+            return processed
+        end
+        
+        -- Override the original set_text to support custom mode
         local original_set_text = watermark.set_text
         watermark.set_text = function(text)
             original_set_text(text)
-            custom_watermark_set = true
+            custom_watermark_text = text
+            use_auto_watermark = false
         end
         
         -- Reset function to restore automatic FPS/ping display
         function watermark.reset_to_auto()
-            custom_watermark_set = false
+            use_auto_watermark = true
+            custom_watermark_text = nil
             fps = 0
             watermark_delay = tick()
         end
@@ -1108,10 +1119,20 @@ getgenv().loaded = true
         run.RenderStepped:Connect(function()
             fps += 1
 
-            if tick() - watermark_delay > 1 and not custom_watermark_set then 
+            if tick() - watermark_delay > 1 then 
                 watermark_delay = tick()
-                local ping = math.floor(stats.PerformanceStats.Ping:GetValue()) .. "ms"                
-                watermark.update_text(string.format("priv9 - fps: %s - ping: %s", fps, ping))
+                local ping = math.floor(stats.PerformanceStats.Ping:GetValue()) .. "ms"
+                
+                local final_text
+                if use_auto_watermark then
+                    -- Default auto mode
+                    final_text = string.format("somber.lol - fps %s - ping %s - uid 0", fps, ping)
+                else
+                    -- Custom mode with placeholder support
+                    final_text = process_watermark_placeholders(custom_watermark_text, fps, ping)
+                end
+                
+                watermark.update_text(final_text)
                 fps = 0
             end
         end)
