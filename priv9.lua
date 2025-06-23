@@ -962,20 +962,153 @@ getgenv().loaded = true
             function cfg.update_text(text)
                 text_title.Text = text
             end
+            
+            function cfg.set_text(text)
+                cfg.name = text
+                text_title.Text = text
+            end
 
             cfg.update_text(cfg.name)
 
             return setmetatable(cfg, library)
+        end
+        
+        function library:watermark_changer(options)
+            local cfg = {
+                name = options.name or "watermark text",
+                default = options.default or "priv9 - custom text",
+                callback = options.callback or function() end,
+                watermark_ref = options.watermark or getgenv().library_watermark,
+                flag = options.flag or "watermark_text",
+            }
+            
+            -- Instances
+                local frame = library:create("TextButton", {
+                    AnchorPoint = vec2(1, 0);
+                    Text = "";
+                    AutoButtonColor = false;
+                    Parent = self.elements;
+                    Position = dim2(1, 0, 0, 0);
+                    BorderColor3 = rgb(0, 0, 0);
+                    Size = dim2(1, 0, 0, 16);
+                    BorderSizePixel = 0;
+                    BackgroundColor3 = self.color
+                }); library:apply_theme(frame, tostring(self.count), "BackgroundColor3")
+                
+                local frame_inline = library:create("Frame", {
+                    Parent = frame;
+                    Position = dim2(0, 1, 0, 1);
+                    BorderColor3 = rgb(0, 0, 0);
+                    Size = dim2(1, -2, 1, -2);
+                    BorderSizePixel = 0;
+                    BackgroundColor3 = themes.preset.inline
+                }); library:apply_theme(frame_inline, "inline", "BackgroundColor3")
+                
+                local input = library:create("TextBox", {
+                    Parent = frame,
+                    Name = "",
+                    FontFace = fonts["ProggyClean"],
+                    TextTruncate = Enum.TextTruncate.AtEnd,
+                    TextSize = 12,
+                    Size = dim2(1, -6, 1, 0),
+                    RichText = false,
+                    TextColor3 = rgb(255, 255, 255),
+                    BorderColor3 = rgb(0, 0, 0),
+                    CursorPosition = -1,
+                    BackgroundTransparency = 1,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    Position = dim2(0, 6, 0, 0),
+                    BorderSizePixel = 0,
+                    PlaceholderColor3 = rgb(170, 170, 170),
+                    PlaceholderText = "Enter watermark text...",
+                    Text = cfg.default,
+                })
+                
+                local title = library:create("TextLabel", {
+                    FontFace = fonts["ProggyClean"];
+                    TextColor3 = rgb(255, 255, 255);
+                    BorderColor3 = rgb(0, 0, 0);
+                    Text = cfg.name;
+                    Parent = self.elements;
+                    Size = dim2(1, 0, 0, 12);
+                    Position = dim2(0, 1, 0, 0);
+                    BackgroundTransparency = 1;
+                    TextXAlignment = Enum.TextXAlignment.Left;
+                    BorderSizePixel = 0;
+                    AutomaticSize = Enum.AutomaticSize.X;
+                    TextSize = 12;
+                    BackgroundColor3 = rgb(255, 255, 255)
+                });
+            -- 
+            
+            -- Functions
+                function cfg.set(text) 
+                    if cfg.watermark_ref and cfg.watermark_ref.set_text then
+                        cfg.watermark_ref.set_text(text)
+                    end
+                    
+                    input.Text = text
+                    flags[cfg.flag] = text
+                    cfg.callback(text)
+                end 
+                
+                -- Initialize with default text
+                cfg.set(cfg.default)
+                
+                -- Add to config system
+                config_flags[cfg.flag] = cfg.set
+            --
+
+            -- Connections 
+                input.FocusLost:Connect(function(enterPressed)
+                    if enterPressed then
+                        cfg.set(input.Text) 
+                    end
+                end)
+                
+                input:GetPropertyChangedSignal("Text"):Connect(function()
+                    -- Update watermark in real-time as user types
+                    if cfg.watermark_ref and cfg.watermark_ref.set_text then
+                        cfg.watermark_ref.set_text(input.Text)
+                    end
+                end)
+            -- 
+            
+            return setmetatable(cfg, library)
         end 
 
         local watermark = library:watermark({name = "priv9 - 100 fps - 100 ping"})
+        getgenv().library_watermark = watermark  -- Make watermark globally accessible
         local fps = 0
         local watermark_delay = tick() 
+        local custom_watermark_set = false  -- Track if user set custom text
+
+        -- Enhanced watermark with custom text override
+        function watermark.set_text_custom(text, disable_auto_update)
+            watermark.set_text(text)
+            if disable_auto_update ~= false then
+                custom_watermark_set = true  -- Disable auto FPS/ping updates
+            end
+        end
+        
+        -- Override the original set_text to maintain custom state
+        local original_set_text = watermark.set_text
+        watermark.set_text = function(text)
+            original_set_text(text)
+            custom_watermark_set = true
+        end
+        
+        -- Reset function to restore automatic FPS/ping display
+        function watermark.reset_to_auto()
+            custom_watermark_set = false
+            fps = 0
+            watermark_delay = tick()
+        end
 
         run.RenderStepped:Connect(function()
             fps += 1
 
-            if tick() - watermark_delay > 1 then 
+            if tick() - watermark_delay > 1 and not custom_watermark_set then 
                 watermark_delay = tick()
                 local ping = math.floor(stats.PerformanceStats.Ping:GetValue()) .. "ms"                
                 watermark.update_text(string.format("priv9 - fps: %s - ping: %s", fps, ping))
