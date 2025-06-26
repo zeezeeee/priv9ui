@@ -1368,6 +1368,14 @@ getgenv().loaded = true
                         end
                     end 
 
+                    function cfg.hide()
+                        toggle.Visible = false
+                    end
+
+                    function cfg.show()
+                        toggle.Visible = true
+                    end
+
                     cfg.set(cfg.default)
 
                     config_flags[cfg.flag] = cfg.set
@@ -1519,6 +1527,14 @@ getgenv().loaded = true
                         cfg.callback(value)
                     end 
             
+                    function cfg.hide()
+                        accent.Visible = false
+                    end
+
+                    function cfg.show()
+                        accent.Visible = true
+                    end
+
                     cfg.refresh_options(cfg.items) 
                 -- 
 
@@ -1615,6 +1631,14 @@ getgenv().loaded = true
 
                         cfg.callback(flags[cfg.flag])
                     end 
+
+                    function cfg.hide()
+                        slider.Visible = false
+                    end
+
+                    function cfg.show()
+                        slider.Visible = true
+                    end
 
                     cfg.set(cfg.default)
                 -- 
@@ -1861,6 +1885,14 @@ getgenv().loaded = true
                     cfg.refresh_options(cfg.items)
 
                     cfg.set(cfg.default)
+
+                    function cfg.hide()
+                        dropdown.Visible = false
+                    end
+
+                    function cfg.show()
+                        dropdown.Visible = true
+                    end
 
                     config_flags[cfg.flag] = cfg.set
                 -- 
@@ -2237,6 +2269,14 @@ getgenv().loaded = true
 
                     cfg.set(cfg.color, cfg.alpha)
                     
+                    function cfg.hide()
+                        colorpicker_element.Visible = false
+                    end
+
+                    function cfg.show()
+                        colorpicker_element.Visible = true
+                    end
+                    
                     config_flags[cfg.flag] = cfg.set
                 -- 
                 
@@ -2350,6 +2390,14 @@ getgenv().loaded = true
 
                         cfg.callback(text)
                     end 
+                    
+                    function cfg.hide()
+                        frame.Visible = false
+                    end
+
+                    function cfg.show()
+                        frame.Visible = true
+                    end
                     
                     config_flags[cfg.flag] = cfg.set
 
@@ -2605,6 +2653,14 @@ getgenv().loaded = true
                         accent.Size = dim2(0, keybind_holder.AbsoluteSize.X, 0, accent.Size.Y.Offset)
                         accent.Position = dim2(0, keybind_holder.AbsolutePosition.X, 0, keybind_holder.AbsolutePosition.Y + 77)
                     end
+
+                    function cfg.hide()
+                        keybind.Visible = false
+                    end
+
+                    function cfg.show()
+                        keybind.Visible = true
+                    end
                 -- 
 
                 -- Connections
@@ -2710,6 +2766,16 @@ getgenv().loaded = true
                         BackgroundColor3 = rgb(255, 255, 255)
                     });
                 -- 
+
+                -- Functions
+                    function cfg.hide()
+                        frame.Visible = false
+                    end
+
+                    function cfg.show()
+                        frame.Visible = true
+                    end
+                --
 
                 -- Connections 
                     frame.MouseButton1Click:Connect(function()
