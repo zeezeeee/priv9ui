@@ -1097,6 +1097,15 @@ getgenv().loaded = true
             local processed = text
             processed = string.gsub(processed, "%%fps%%", tostring(current_fps))
             processed = string.gsub(processed, "%%ping%%", current_ping)
+            
+            -- Check for global auth variables set by main script
+            if getgenv().auth_user_id then
+                processed = string.gsub(processed, "%%uid%%", getgenv().auth_user_id)
+            end
+            if getgenv().auth_username then
+                processed = string.gsub(processed, "%%username%%", getgenv().auth_username)
+            end
+            
             return processed
         end
         
