@@ -1125,7 +1125,7 @@ getgenv().loaded = true
             watermark_delay = tick()
         end
 
-        run.RenderStepped:Connect(function()
+        library:connection(run.RenderStepped, function()
             fps += 1
 
             if tick() - watermark_delay > 1 then 
@@ -1916,7 +1916,7 @@ getgenv().loaded = true
                         cfg.set_visible(cfg.open)
                     end)
 
-                    uis.InputEnded:Connect(function(input)
+                    library:connection(uis.InputEnded, function(input)
                         if input.UserInputType == Enum.UserInputType.MouseButton1 then
                             if not (library:mouse_in_frame(accent) or library:mouse_in_frame(dropdown)) then 
                                 cfg.open = false
@@ -2296,7 +2296,7 @@ getgenv().loaded = true
                         cfg.set_visible(cfg.open)            
                     end)
 
-                    uis.InputChanged:Connect(function(input)
+                    library:connection(uis.InputChanged, function(input)
                         if (dragging_sat or dragging_hue or dragging_alpha) and input.UserInputType == Enum.UserInputType.MouseMovement then
                             cfg.update_color() 
                         end
